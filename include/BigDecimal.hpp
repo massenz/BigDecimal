@@ -4,46 +4,68 @@
 #pragma once
 
 #include <cmath>
+#include <iomanip>
 #include <string>
 #include <glog/logging.h>
+#include <functional>
 
 namespace {
 
+ class not_implemented : public std::exception {
+   std::string reason_;
+  public:
+   explicit not_implemented(const std::string& reason) : reason_(reason) {}
+
+   const char* what() const noexcept override {
+     return reason_.c_str();
+   }
+ };
+
+ class bad_hex : public std::exception {
+  public:
+   const char* what() const noexcept override {
+     return "bad hex representation";
+   }
+ };
+
 const short NUM_ = 4;
-const float DIV_ = 2e+64;
+const short DIGITS_ = 16;
+const unsigned long long DIV_ = 1L << 63;
 
 // Implements a 256-bit unsigned integer (uint256)
 class BigDecimal {
  private:
-  uint64_t b[NUM_];
+  unsigned long long b[NUM_];
 
  public:
-  explicit BigDecimal(uint64_t value) {
-    for (int i = 0; i < NUM_; ++i) {
-      b[i] = 0;
+  explicit BigDecimal(const std::string& hex) {
+    if (hex.find_first_of("0x") != 0) {
+      throw bad_hex{};
     }
-    b[0] = value;
+    if (hex.length() < DIGITS_ + 2) {
+      throw not_implemented{"string length: " + std::to_string(hex.length())};
+    }
+
+    int pivot = hex.length() - DIGITS_;
+    for (int i = 0; i < NUM_; ++i) {
+      if (pivot < 0) {
+        printf("this will cause an error!");
+        break;
+      }
+      std::stringstream ss;
+      ss << std::hex << hex.substr(pivot, DIGITS_);
+      ss >> b[i];
+      pivot -= DIGITS_;
+    }
   };
 
-  // A 256-bit unsigned integer can represent approximately up to 10^+79
-  // thus a float has enough range to represent it; the decimal part will
-  // be ignored.
-  // Also, due to rounding divisions while converting to binary representation,
-  // the actual resulting value may be off by one.
-  explicit BigDecimal(float val) {
-    // TODO: Implement logic here
-    val = std::floor(val);
-    for (unsigned long & i : b) {
-      float r = std::fmod(val, DIV_);
-      i = std::floor(r);
-      val = std::floor(val / DIV_);
-      if (val < 1.0) break;
-    }
-  }
-
   explicit operator std::string() const {
-    // TODO: Implement logic here
-    return std::to_string(b[0]);
+    std::stringstream buf;
+    buf << std::hex << std::setw(16) << std::setfill('0');
+    for (int i = NUM_; i > 0; --i) {
+      buf << b[i-1];
+    }
+    return buf.str();
   }
 };
 }

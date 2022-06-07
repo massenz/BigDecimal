@@ -41,9 +41,8 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  float value = std::atof(argv[1]);
-  ::BigDecimal s(value);
-
+  ::BigDecimal s(argv[1]);
   cout << "Value: " << std::string(s) << endl;
+
   return EXIT_SUCCESS;
 }
