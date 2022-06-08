@@ -22,9 +22,12 @@ namespace {
  };
 
  class bad_hex : public std::exception {
+   std::string reason_;
   public:
+   explicit bad_hex(const std::string& reason) : reason_(reason) {}
+
    const char* what() const noexcept override {
-     return "bad hex representation";
+     return reason_.c_str();
    }
  };
 
@@ -40,28 +43,32 @@ class BigDecimal {
  public:
   explicit BigDecimal(const std::string& hex) {
     if (hex.find_first_of("0x") != 0) {
-      throw bad_hex{};
+      throw bad_hex{"Missing leading `0x`"};
     }
-    if (hex.length() < DIGITS_ + 2) {
-      throw not_implemented{"string length: " + std::to_string(hex.length())};
-    }
+    auto digits = hex.substr(2);
+    int i = 0;
+    int start, count;
 
-    int pivot = hex.length() - DIGITS_;
-    for (int i = 0; i < NUM_; ++i) {
-      if (pivot < 0) {
-        printf("this will cause an error!");
-        break;
+    while (digits.length() > 0) {
+      if (digits.length() >= DIGITS_) {
+        start = digits.length() - DIGITS_;
+        count = DIGITS_;
+      } else {
+        start = 0;
+        count = digits.length();
       }
+
       std::stringstream ss;
-      ss << std::hex << hex.substr(pivot, DIGITS_);
-      ss >> b[i];
-      pivot -= DIGITS_;
+      ss << std::hex << digits.substr(start, count);
+      ss >> b[i++];
+
+      digits = digits.substr(0, digits.length() - count);
     }
   };
 
   explicit operator std::string() const {
     std::stringstream buf;
-    buf << std::hex << std::setw(16) << std::setfill('0');
+    buf << "0x" << std::hex << std::setw(16) << std::setfill('0');
     for (int i = NUM_; i > 0; --i) {
       buf << b[i-1];
     }

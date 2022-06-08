@@ -1,6 +1,8 @@
 // Copyright (c) 2020 AlertAvert.com. All rights reserved.
 // Created by M. Massenzio (marco@alertavert.com)
 
+#include "assert.h"
+
 #include <iostream>
 #include <regex>
 #include <string>
@@ -28,12 +30,11 @@ void usage(const std::string &arg) {
 }
 
 void headline() {
-  cout << "Template Project Demo - " << RELEASE_STR << endl << endl;
+  cout << "BigDecimal Project Demo - " << RELEASE_STR << endl << endl;
 }
 } // namespace demo
 
 int main(int argc, char *argv[]) {
-
   demo::headline();
   if (argc < 2) {
     demo::usage(argv[0]);
@@ -41,8 +42,12 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  ::BigDecimal s(argv[1]);
-  cout << "Value: " << std::string(s) << endl;
+  std::string value{argv[1]};
+  ::BigDecimal s(value);
+
+  auto conv = std::string(s);
+  std::cout << conv << std::endl;
+  assert(conv == value);
 
   return EXIT_SUCCESS;
 }
